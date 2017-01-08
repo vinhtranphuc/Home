@@ -1,0 +1,32 @@
+﻿/*1.Hãy cho biết có những khách hàng nào lại chính là đối tác cung cấp hàng của công ty (tức là có cùng tên giao dịch). */
+select khachhang.makhachhang,khachhang.tengiaodich,nhacungcap.tengiaodich from khachhang,dondathang,chitietdathang,mathang,nhacungcap 
+where khachhang.makhachhang=dondathang.makhachhang and chitietdathang.mahang=mathang.mahang and mathang.macongty=nhacungcap.macongty
+and nhacungcap.tengiaodich=khachhang.tengiaodich
+/*2.Những đơn đặt hàng nào yêu cầu giao hàng ngay tại cty đặt hàng và những đơn đó là của công ty nào?.*/
+select khachhang.makhachhang,khachhang.tencongty,khachhang.diachi,dondathang.noigiaohang from khachhang,dondathang 
+where dondathang.makhachhang=khachhang.makhachhang and dondathang.noigiaohang=khachhang.diachi
+/*3.Những mặt hàng nào chưa từng được khách hàng đặt mua?*/
+select mathang.* from mathang 
+where mathang.mahang not in (select mathang.mahang from mathang join chitietdathang on mathang.mahang=chitietdathang.mahang)
+/*4.Những nhân viên nào của công ty chưa từng lập bất kỳ một hoá đơn đặt hàng nào? */
+select nhanvien.* from nhanvien 
+where nhanvien.manhanvien not in (select nhanvien.manhanvien from nhanvien join dondathang on nhanvien.manhanvien=dondathang.manhanvien)
+/*5.Trong năm 2003, những mặt hàng nào chỉ được đặt mua đúng một lần*/
+/*Cach 1*/
+select mathang.mahang,mathang.tenhang,count(mathang.mahang) as 'Số lần được mua'
+from mathang join chitietdathang on mathang.mahang=chitietdathang.mahang
+join dondathang on chitietdathang.sohoadon=dondathang.sohoadon 
+where year(dondathang.ngaydathang)='2003'
+group by mathang.mahang,mathang.tenhang having count(mathang.mahang)=1 
+/*Cach 2*/
+select mathang.mahang,mathang.tenhang,count(mathang.mahang) as 'Số lần được mua'
+from mathang,chitietdathang,dondathang 
+where mathang.mahang=chitietdathang.mahang
+and chitietdathang.sohoadon=dondathang.sohoadon
+and year(dondathang.ngaydathang)='2003'
+group by mathang.mahang,mathang.tenhang having count(mathang.mahang)=1
+/*5. Hãy cho biết mỗi một khách hàng đã phải bỏ ra bao nhiêu tiền để đặt mua hàng của công ty? */
+select khachhang.makhachhang,khachhang.tencongty,giaban from khachhang 
+left join (dondathang left join chitietdathang on dondathang.sohoadon=chitietdathang.sohoadon) on khachhang.makhachhang=dondathang.makhachhang
+
+
