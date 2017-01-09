@@ -1,4 +1,4 @@
-﻿/*1.Hãy cho biết có những khách hàng nào lại chính là đối tác cung cấp hàng của công ty (tức là có cùng tên giao dịch). */
+/*1.Hãy cho biết có những khách hàng nào lại chính là đối tác cung cấp hàng của công ty (tức là có cùng tên giao dịch). */
 select khachhang.makhachhang,khachhang.tengiaodich,nhacungcap.tengiaodich from khachhang,dondathang,chitietdathang,mathang,nhacungcap 
 where khachhang.makhachhang=dondathang.makhachhang and chitietdathang.mahang=mathang.mahang and mathang.macongty=nhacungcap.macongty
 and nhacungcap.tengiaodich=khachhang.tengiaodich
@@ -6,7 +6,7 @@ and nhacungcap.tengiaodich=khachhang.tengiaodich
 select khachhang.makhachhang,khachhang.tencongty,khachhang.diachi,dondathang.noigiaohang from khachhang,dondathang 
 where dondathang.makhachhang=khachhang.makhachhang and dondathang.noigiaohang=khachhang.diachi
 /*3.Những mặt hàng nào chưa từng được khách hàng đặt mua?*/
-select mathang.* from mathang 
+select mathang.mahang,tenhang from mathang 
 where mathang.mahang not in (select mathang.mahang from mathang join chitietdathang on mathang.mahang=chitietdathang.mahang)
 /*4.Những nhân viên nào của công ty chưa từng lập bất kỳ một hoá đơn đặt hàng nào? */
 select nhanvien.* from nhanvien 
@@ -14,19 +14,136 @@ where nhanvien.manhanvien not in (select nhanvien.manhanvien from nhanvien join 
 /*5.Trong năm 2003, những mặt hàng nào chỉ được đặt mua đúng một lần*/
 /*Cach 1*/
 select mathang.mahang,mathang.tenhang,count(mathang.mahang) as 'Số lần được mua'
-from mathang join chitietdathang on mathang.mahang=chitietdathang.mahang
+from (mathang join chitietdathang on mathang.mahang=chitietdathang.mahang)
 join dondathang on chitietdathang.sohoadon=dondathang.sohoadon 
 where year(dondathang.ngaydathang)='2003'
-group by mathang.mahang,mathang.tenhang having count(mathang.mahang)=1 
+group by mathang.mahang,mathang.tenhang 
+having count(chitietdathang.mahang)=1 
 /*Cach 2*/
 select mathang.mahang,mathang.tenhang,count(mathang.mahang) as 'Số lần được mua'
 from mathang,chitietdathang,dondathang 
 where mathang.mahang=chitietdathang.mahang
 and chitietdathang.sohoadon=dondathang.sohoadon
 and year(dondathang.ngaydathang)='2003'
-group by mathang.mahang,mathang.tenhang having count(mathang.mahang)=1
-/*5. Hãy cho biết mỗi một khách hàng đã phải bỏ ra bao nhiêu tiền để đặt mua hàng của công ty? */
-select khachhang.makhachhang,khachhang.tencongty,giaban from khachhang 
-left join (dondathang left join chitietdathang on dondathang.sohoadon=chitietdathang.sohoadon) on khachhang.makhachhang=dondathang.makhachhang
+group by mathang.mahang,mathang.tenhang 
+having count(chitietdathang.mahang)=1
+/*6. Hãy cho biết mỗi một khách hàng đã phải bỏ ra bao nhiêu tiền để đặt mua hàng của công ty? */
+select khachhang.makhachhang,tencongty,khachhang.tengiaodich,sum((soluong*giaban)*(1-mucgiamgia/100)) as 'so tien'
+from khachhang,chitietdathang,dondathang
+where khachhang.makhachhang=dondathang.makhachhang
+and dondathang.sohoadon=chitietdathang.sohoadon
+group by khachhang.makhachhang,tencongty,khachhang.tengiaodich
+/*7.Mỗi một nhân viên của công ty đã lập bao nhiêu đơn đặt hàng (nếu nhân viên chưa hề lập một hoá đơn nào thì cho kết quả là 0)*/
+select nhanvien.manhanvien,nhanvien.ho,nhanvien.ten,count(dondathang.sohoadon) as 'so don da lap' 
+from nhanvien left join dondathang on nhanvien.manhanvien=dondathang.manhanvien
+group by nhanvien.manhanvien,nhanvien.ho,nhanvien.ten
+/*8.Cho biết tổng số tiền hàng mà cửa hàng thu được trong mỗi tháng của năm 2003 (thời được gian tính theo ngày đặt hàng).*/
+select month(ngaydathang) as 'Thang',sum((soluong*giaban)*(1-mucgiamgia/100)) as 'tien thu theo thang' from dondathang,chitietdathang
+where dondathang.sohoadon=chitietdathang.sohoadon
+group by month(ngaydathang)
+/*9.Hãy cho biết tổng số lượng hàng của mỗi mặt hàng mà cty đã có (tổng số lượng hàng hiện có và đã bán).*/
+select mathang.mahang,mathang.tenhang,sum(mathang.soluong-chitietdathang.soluong) as 'so hang hien co',sum(chitietdathang.soluong) as 'so hang da ban'
+from mathang,chitietdathang where mathang.mahang=chitietdathang.mahang
+group by mathang.mahang,mathang.tenhang
+/*10.Nhân viên nào của cty bán được số lượng hàng nhiều nhất và số lượng hàng bán được của nhân viên này là bao nhiêu?*/
+select nhanvien.manhanvien,ho,ten,sum(chitietdathang.soluong) as 'so luong hang nv ban'
+from (nhanvien join dondathang on nhanvien.manhanvien=dondathang.manhanvien) join chitietdathang 
+on dondathang.sohoadon=chitietdathang.sohoadon
+group by nhanvien.manhanvien,ho,ten
+having sum(chitietdathang.soluong)>=all(select sum(soluong) from nhanvien,dondathang,chitietdathang where nhanvien.manhanvien=dondathang.manhanvien
+and dondathang.sohoadon=chitietdathang.sohoadon)
+/*11. Mỗi một đơn đặt hàng đặt mua những mặt hàng nào và tổng số tiền mà mỗi đơn đặt hàng phải trả là bao nhiêu?*/
+select dondathang.sohoadon,mathang.mahang,tenhang,sum((chitietdathang.soluong*giaban)*(1-mucgiamgia/100)) as 'So tien cua don hang'
+from dondathang,chitietdathang,mathang
+where dondathang.sohoadon=chitietdathang.sohoadon and chitietdathang.mahang=mathang.mahang
+group by dondathang.sohoadon,mathang.mahang,tenhang
+/*12.Hãy cho biết mỗi một loại hàng bao gồm những mặt hàng nào, tổng số lượng hàng của mỗi loại và tổng số lượng của tất cả các mặt hàng hiện có 
+trong công ty là bao nhiêu? */
+select loaihang.maloaihang,tenloaihang,mathang.mahang,mathang.tenhang,mathang.soluong,sum(mathang.soluong) as 'so luong hang' from loaihang,mathang
+where loaihang.maloaihang=mathang.maloaihang
+group by loaihang.maloaihang,tenloaihang,mathang.mahang,mathang.tenhang,mathang.soluong
+order by mathang.mahang
+compute sum(mathang.soluong) by mathang.mahang
+/*13.Thống kê xem trong năm 2003, mỗi một mặt hàng trong mỗi tháng và trong cả năm bán được với số lượng bao nhiêu.*/
+select m.mahang,tenhang,
+sum(case month(d.ngaydathang) when 1 then c.soluong else 0 end) as 'thang 1',
+sum(case month(d.ngaydathang) when 2 then c.soluong else 0 end) as 'thang 2',
+sum(case month(d.ngaydathang) when 3 then c.soluong else 0 end) as 'thang 3',
+sum(case month(d.ngaydathang) when 4 then c.soluong else 0 end) as 'thang 4',
+sum(case month(d.ngaydathang) when 5 then c.soluong else 0 end) as 'thang 5',
+sum(case month(d.ngaydathang) when 6 then c.soluong else 0 end) as 'thang 6',
+sum(case month(d.ngaydathang) when 7 then c.soluong else 0 end) as 'thang 7',
+sum(case month(d.ngaydathang) when 8 then c.soluong else 0 end) as 'thang 8',
+sum(case month(d.ngaydathang) when 9 then c.soluong else 0 end) as 'thang 9',
+sum(case month(d.ngaydathang) when 10 then c.soluong else 0 end) as 'thang 10',
+sum(case month(d.ngaydathang) when 11 then c.soluong else 0 end) as 'thang 11',
+sum(case month(d.ngaydathang) when 12 then c.soluong else 0 end) as 'thang 12'
+from mathang m,dondathang d,chitietdathang c
+where m.mahang=c.mahang and d.sohoadon=c.sohoadon
+and year(d.ngaydathang)='2003'
+/*14.Cập nhật lại giá trị NGAYCHUYENHANG của những bản ghi có giá trị NGAYCHUYENHANG chưa xác định (NULL) trong bảng DONDATHANG 
+bằng với giá trị của trường NGAYDATHANG.*/
+update dondathang set ngaychuyenhang=ngaydathang
+where ngaychuyenhang is null
+/*15.Cập nhật giá trị của trường NOIGIAOHANG trong bảng DONDATHANG bằng địa chỉ của khách hàng đối với những đơn đặt hàng chưa xác định được
+ nơi giao hàng (có giá trị trường NOIGIAOHANG bằng NULL)*/
+ update dondathang set noigiaohang=diachi from khachhang
+ where dondathang.makhachhang=khachhang.makhachhang
+ and noigiaohang is null
+ /*16.Cập nhật lại dữ liệu trong bảng KHACHHANG sao cho nếu tên công ty và tên giao dịch của khách hàng trùng với
+  tên công ty và tên giao dịch của một nhà cung cấp nào đó thì địa chỉ, điện thoại, fax và email phải giống nhau.*/
+ update khachhang set khachhang.diachi=nhacungcap.diachi,khachhang.dienthoai=nhacungcap.dienthoai,khachhang.fax=nhacungcap.fax,
+ khachhang.email=nhacungcap.email from nhacungcap
+ where khachhang.tengiaodich=nhacungcap.tengiaodich and khachhang.tencongty=nhacungcap.tencongty
+ /*17.Tăng lương lên gấp rưỡi cho những nhân viên bán được số lượng hàng nhiều hơn 100 trong năm 2003*/
+UPDATE NHANVIEN
+SET LUONGCOBAN=LUONGCOBAN*1.5
+WHERE MANHANVIEN IN(SELECT MANHANVIEN
+FROM DONDATHANG, CHITIETDATHANG
+WHERE DONDATHANG.SOHOADON=CHITIETDATHANG.SOHOADON 
+AND
+MANHANVIEN=DONDATHANG.MANHANVIEN AND
+YEAR(DONDATHANG.NGAYGIAOHANG)=2003
+GROUP BY MANHANVIEN
+HAVING SUM(SOLUONG)>100)
+/*18.Tăng phụ cấp lên bằng 50% lương cho những nhân viên bán được hàng nhiều nhất.*/
+UPDATE NHANVIEN
+SET PHUCAP=LUONGCOBAN/2
+WHERE MANHANVIEN IN
+(SELECT MANHANVIEN
+FROM DONDATHANG, CHITIETDATHANG
+WHERE DONDATHANG.SOHOADON=CHITIETDATHANG.SOHOADON
+GROUP BY MANHANVIEN
+HAVING SUM(SOLUONG)>=ALL
+(SELECT SUM(SOLUONG)
+FROM DONDATHANG, CHITIETDATHANG
+WHERE DONDATHANG.SOHOADON=CHITIETDATHANG.SOHOADON
+GROUP BY MANHANVIEN))
+SELECT * FROM NHANVIEN
+/*19.Giảm 25% lương của những nhân viên trong năm 2003 ko lập được bất kỳ đơn đặt hàng nào*/
+UPDATE NHANVIEN
+SET LUONGCOBAN=LUONGCOBAN*0.85
+WHERE NOT EXISTS (SELECT MANHANVIEN
+FROM DONDATHANG
+WHERE MANHANVIEN=NHANVIEN.MANHANVIEN AND
+YEAR(NGAYDATHANG)=2003)
+SELECT * FROM NHANVIEN
+/*20.Giả sử trong bảng DONDATHANG có them trường SOTIEN cho biết số tiền mà khách hàng phải trả trong mỗi dơnđặt hàng. Hãy tính giá trị cho trường này.*/
+ALTER TABLE DONDATHANG ADD SOTIEN INT
+UPDATE DONDATHANG
+SET SOTIEN=(SELECT SUM(SOLUONG*GIABAN+SOLUONG*GIABAN*MUCGIAMGIA)
+FROM CHITIETDATHANG
+WHERE SOHOADON=DONDATHANG.SOHOADON
+GROUP BY SOHOADON)
+SELECT * FROM DONDATHANG
+/*21.Xoá khỏi bảng MATHANG những mặt hàng có số lượng bằng 0*/
+DELETE FROM MATHANG
+WHERE SOLUONG=0 AND NOT EXISTS(SELECT SOHOADON
+FROM CHITIETDATHANG
+WHERE MAHANG=MATHANG.MAHANG)
+SELECT * FROM MATHANG
+
+
+
 
 
