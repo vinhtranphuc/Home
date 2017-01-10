@@ -1,0 +1,45 @@
+// đang làm chưa hoàn chỉnh:
+/*22. Hiển thị báo cáo thống kê doanh số bán hàng theo từng tháng trong năm 2010, trường hợp tháng nào ko có doanh số thì hiển thị là 0*/
+select month(OrderDate) as 'Thang',sum(OrdAmt) as 'Doanh So' from xswSalesOrd 
+where year(OrderDate)='2010'
+group by month(OrderDate) 
+/*23.Hiển thị báo cáo thống kê doanh số bán hàng theo từng tháng của từng nhân viên trong năm 2010,  trường hợp nếu nhân viên bán hàng ko có doanh số tháng đó thì hiển thị là 0.*/
+select xswSalesOrd.SlsPerID,Name,month(OrderDate) as 'Thang' from SalesPerson,xswSalesOrd
+where xswSalesOrd.SlsPerId=SalesPerson.SlsPerID
+group by 
+
+//tham khảo thêm
+---------------------
+-- Hiển thị danh sách nhân viên bán hàng gồm:
+        -- Mã nhân viên bán hàng
+        -- Tên nhân viên bán hàng
+        -- Địa chỉ
+        -- Hiển thị “Không” nếu nhân viên bán hàng ko phải là khách hàng,
+        -- “Có” nếu nhân viên bán hàng là khách hàng (có mua hàng của nhà phân phối).
+        -- Chú ý: viết user-function để nhận biết nhân viên và khách hàng.
+ 
+ 
+CREATE FUNCTION func_sale_is_customer (@sale_id nvarchar(10))
+        RETURNS nvarchar(5) AS
+        BEGIN
+                DECLARE @str nvarchar(5)
+                DECLARE @name nvarchar(50)
+ 
+                SELECT @name = Name FROM SalesPerson WHERE SlsPerID= @sale_id
+ 
+                IF EXISTS (SELECT 1 FROM Customer WHERE Name = @name)
+                        BEGIN
+                                SET @str = N'Có'
+                        END
+                ELSE
+                        BEGIN
+                                SET @str = N'Không'
+                        END
+ 
+                RETURN (@str)
+        END
+GO
+ 
+SELECT SlsPerID, Name
+                , dbo.func_sale_is_customer(SlsPerID) AS Display
+        FROM SalesPerson
