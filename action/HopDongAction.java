@@ -26,6 +26,7 @@ public class HopDongAction extends Action{
 		ArrayList<KhachHang> listHopDong=new ArrayList<KhachHang>();
 		listHopDong=hopDongBO.getListHopDong();
 		
+		//test
 		for(KhachHang element:listHopDong)
 		{
 			System.out.println(element.getMaKhachHang());
@@ -34,10 +35,10 @@ public class HopDongAction extends Action{
 			System.out.println(element.getSoCMND());
 			System.out.println(element.getDiaChi());
 		}
-		//gửi danh sách hợp đồng
-		HopDongForm hopDongForm=new HopDongForm();
-		hopDongForm.setListHopDong(listHopDong);
 		
-		return mapping.findForward("themSinhVien.jsp");
+		//gửi danh sách hợp đồng
+		HopDongForm hopDongForm = (HopDongForm) form;
+		hopDongForm.setListHopDong(listHopDong);
+		return mapping.findForward("thanhCong");
 	}
 }
