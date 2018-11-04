@@ -1,2 +1,5 @@
 Fix start Tomcat không load Spring NoXML
 http://websystique.com/misc/how-to-setup-tomcat-with-eclipse/
+
+Spring security
+http://websystique.com/spring/spring4-hibernate4-mysql-maven-integration-example-using-annotations/
